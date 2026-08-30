@@ -130,7 +130,12 @@ proxy:
 techdocs:
   builder: 'local' # Alternatives - 'external'
   generator:
-    runIn: 'docker' # Alternatives - 'local'
+    # 'local' rather than 'docker': Docker is not installed in this WSL
+    # environment. The generator shells out to `mkdocs build`, so the mkdocs
+    # binary must be on the backend process PATH. It is installed in a Python
+    # virtualenv at ~/.venvs/techdocs and symlinked into ~/.local/bin, which
+    # ~/.profile adds to PATH.
+    runIn: 'local'
   publisher:
     type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
 
@@ -186,6 +191,12 @@ catalog:
       target: ../../catalog/teamomf-org.yaml
       rules:
         - allow: [User, Group, Domain]
+
+    # TEAMOMF platform architecture (systems that really exist).
+    - type: file
+      target: ../../catalog/teamomf-systems.yaml
+      rules:
+        - allow: [System, Domain]
 
     # Local example template
     - type: file

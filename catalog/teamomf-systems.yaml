@@ -1,0 +1,14 @@
+# TEAMOMF platform architecture.
+#
+# Systems group the components, APIs and resources that are built and
+# operated together. Only systems that really exist belong here.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: teamomf-platform
+  title: TEAMOMF Platform
+  description: >-
+    The TEAMOMF internal platform. Groups the services, APIs and resources
+    that make up TEAMOMF.
+spec:
+  owner: group:default/developers
