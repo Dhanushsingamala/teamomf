@@ -1,0 +1,27 @@
+# TEAMOMF organisation.
+#
+# Managed by `yarn teamomf:user`. Every entry corresponds to a real
+# person with a real credential in the TEAMOMF credential store.
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: developers
+  title: developers
+spec:
+  type: team
+  profile:
+    displayName: developers
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: dhanushreddy
+  annotations:
+    github.com/user-login: dhanushsingamala
+spec:
+  profile:
+    displayName: Dhanush Reddy
+    email: dhanush@gmail.com
+  memberOf:
+    - developers

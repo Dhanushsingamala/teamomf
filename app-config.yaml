@@ -1,0 +1,223 @@
+app:
+  title: TEAMOMF Developer Portal
+  baseUrl: http://localhost:3000
+
+  # Enable all packages by default, this will discover packages from packages/app/package.json
+  packages: all
+
+  extensions:
+    # The TEAMOMF home page is the portal's landing page. The catalog keeps
+    # its own default path of /catalog.
+    - page:home:
+        config:
+          path: /
+          defaultConfig:
+            - component: HomePageSearchBar
+              column: 0
+              row: 0
+              width: 12
+              height: 2
+              deletable: false
+            - component: TeamomfWelcome
+              column: 0
+              row: 2
+              width: 8
+              height: 5
+            - component: TeamomfQuickActions
+              column: 8
+              row: 2
+              width: 4
+              height: 5
+            - component: TeamomfMyWork
+              column: 0
+              row: 7
+              width: 6
+              height: 5
+            - component: HomePageStarredEntities
+              column: 6
+              row: 7
+              width: 6
+              height: 5
+            - component: TeamomfServices
+              column: 0
+              row: 12
+              width: 4
+              height: 5
+            - component: TeamomfApis
+              column: 4
+              row: 12
+              width: 4
+              height: 5
+            - component: TeamomfDocs
+              column: 8
+              row: 12
+              width: 4
+              height: 5
+            - component: TeamomfTemplates
+              column: 0
+              row: 17
+              width: 6
+              height: 4
+            - component: TeamomfRepositories
+              column: 6
+              row: 17
+              width: 6
+              height: 4
+
+organization:
+  name: TEAMOMF
+
+backend:
+  # Used for enabling authentication, secret is shared by all backend plugins
+  # See https://backstage.io/docs/auth/service-to-service-auth for
+  # information on the format
+  # auth:
+  #   keys:
+  #     - secret: ${BACKEND_SECRET}
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+    # Uncomment the following host directive to bind to specific interfaces
+    # host: 127.0.0.1
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+    # Content-Security-Policy directives follow the Helmet format: https://helmetjs.github.io/#reference
+    # Default Helmet Content-Security-Policy values can be removed by setting the key to false
+  cors:
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  # This is for local development only, it is not recommended to use this in production
+  # The production database configuration is stored in app-config.production.yaml
+  database:
+    client: better-sqlite3
+    # File-backed rather than ':memory:' so that catalog entities, user
+    # credentials and TechDocs state survive a backend restart. Path is
+    # resolved relative to the backend process cwd (packages/backend).
+    connection:
+      directory: ../../.data/db
+  # see https://backstage.io/docs/ai/mcp-actions#actions-configuration for more details
+  actions:
+    pluginSources:
+      - auth
+      - catalog
+      - scaffolder
+  # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
+
+integrations:
+  github:
+    - host: github.com
+      # This is a Personal Access Token or PAT from GitHub. You can find out how to generate this token, and more information
+      # about setting up the GitHub integration here: https://backstage.io/docs/integrations/github/locations#configuration
+      token: ${GITHUB_TOKEN}
+    ### Example for how to add your GitHub Enterprise instance using the API:
+    # - host: ghe.example.net
+    #   apiBaseUrl: https://ghe.example.net/api/v3
+    #   token: ${GHE_TOKEN}
+
+proxy:
+  ### Example for how to add a proxy endpoint for the frontend.
+  ### A typical reason to do this is to handle HTTPS and CORS for internal services.
+  # endpoints:
+  #   '/test':
+  #     target: 'https://example.com'
+  #     changeOrigin: true
+
+# Reference documentation http://backstage.io/docs/features/techdocs/configuration
+# Note: After experimenting with basic setup, use CI/CD to generate docs
+# and an external cloud storage when deploying TechDocs for production use-case.
+# https://backstage.io/docs/features/techdocs/how-to-guides#how-to-migrate-from-techdocs-basic-to-recommended-deployment-approach
+techdocs:
+  builder: 'local' # Alternatives - 'external'
+  generator:
+    runIn: 'docker' # Alternatives - 'local'
+  publisher:
+    type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
+
+auth:
+  # see https://backstage.io/docs/auth/ to learn about auth providers
+  providers:
+    # See https://backstage.io/docs/auth/guest/provider
+    # Retained as a fallback while credential login is being verified.
+    guest: {}
+
+    # TEAMOMF credential login. The provider itself is registered in code by
+    # @internal/plugin-teamomf-credentials-backend; the auth plugin only
+    # instantiates providers that also appear here, so this key is required
+    # even though the provider takes no options.
+    teamomf: {}
+  # see https://backstage.io/docs/ai/mcp-actions#client-id-metadata-documents
+  # to learn more about client id metadata documents
+  clientIdMetadataDocuments:
+    enabled: false
+    # Optional: restrict which `client_id` URLs are allowed (defaults to ['*'])
+    # allowedClientIdPatterns:
+    #   - 'https://example.com/*'
+    #   - 'https://*.trusted-domain.com/*'
+    # Optional: restrict which redirect URIs are allowed (defaults to ['*'])
+    # allowedRedirectUriPatterns:
+    #   - 'http://localhost:*'
+    #   - 'https://*.example.com/*'
+
+scaffolder:
+  # see https://backstage.io/docs/features/software-templates/configuration for software template options
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    # Domain/Group/User added so that the real TEAMOMF org chart can be
+    # ingested from a GitHub location. Without these three, User and Group
+    # entities from any url: location are silently discarded.
+    - allow: [Component, System, API, Resource, Location, Domain, Group, User]
+  locations:
+    # NOTE: examples/entities.yaml (example-website, example-grpc-api, the
+    # "examples" System) is deliberately NOT registered. Those are Backstage
+    # demo entities and would appear as fake services and APIs on the home
+    # page. Re-add this location if you ever want them back.
+
+    - type: url
+      target: https://github.com/Dhanushsingamala/teamomf-orders-service/blob/master/catalog-info.yaml
+
+    # The real TEAMOMF org chart. Written by `yarn teamomf:user`, one entry
+    # per real person with a real credential. Starts empty.
+    - type: file
+      target: ../../catalog/teamomf-org.yaml
+      rules:
+        - allow: [User, Group, Domain]
+
+    # Local example template
+    - type: file
+      target: ../../examples/template/template.yaml
+      rules:
+        - allow: [Template]
+
+    # Local example organizational data
+    - type: file
+      target: ../../examples/org.yaml
+      rules:
+        - allow: [User, Group]
+
+    ## Uncomment these lines to add more example data
+    # - type: url
+    #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/all.yaml
+
+    ## Uncomment these lines to add an example org
+    # - type: url
+    #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/acme-corp.yaml
+    #   rules:
+    #     - allow: [User, Group]
+
+kubernetes:
+  # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
+
+# see https://backstage.io/docs/permissions/getting-started for more on the permission framework
+permission:
+  # setting this to `false` will disable permissions
+  enabled: true
+
+# see https://backstage.io/docs/ai/mcp-actions for more details
+mcpActions:
+  name: 'My Company Backstage' # defaults to "backstage"
+  description: 'Tools for managing your software catalog, creating new services from templates, and exploring your developer portal' # optional
