@@ -151,6 +151,17 @@ auth:
     # instantiates providers that also appear here, so this key is required
     # even though the provider takes no options.
     teamomf: {}
+
+    # GitHub OAuth is deliberately NOT a TEAMOMF sign-in method -- the sign-in
+    # page still only offers credential login. It is here purely so that
+    # scmAuthApi can obtain a short-lived GitHub token on the signed-in user's
+    # behalf, which the GitHub Actions plugin needs in order to read real
+    # workflow runs from the API. The popup appears the first time a user
+    # opens the CI/CD tab, not at sign-in.
+    github:
+      development:
+        clientId: ${AUTH_GITHUB_CLIENT_ID}
+        clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
   # see https://backstage.io/docs/ai/mcp-actions#client-id-metadata-documents
   # to learn more about client id metadata documents
   clientIdMetadataDocuments:

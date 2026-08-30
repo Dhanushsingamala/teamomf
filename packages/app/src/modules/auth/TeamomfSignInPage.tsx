@@ -17,6 +17,7 @@ import {
 } from '@backstage/core-plugin-api';
 import type { SignInPageProps } from '@backstage/plugin-app-react';
 import { TeamomfBrand } from './TeamomfBrand';
+import { teamomf } from '../theme/tokens';
 
 /** The auth provider id registered by the teamomf-credentials backend. */
 const PROVIDER_ID = 'teamomf';
@@ -37,8 +38,9 @@ const useStyles = makeStyles(theme => ({
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: theme.spacing(6),
-    color: theme.palette.primary.contrastText,
-    background: `linear-gradient(150deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+    color: '#FFFFFF',
+    backgroundColor: teamomf.navySurface,
+    borderRight: `4px solid ${teamomf.saffron}`,
     [theme.breakpoints.down('sm')]: {
       display: 'none',
     },
@@ -227,14 +229,14 @@ export function TeamomfSignInPage(props: SignInPageProps) {
                 Could not complete sign-in
               </Typography>
               <Typography variant="body2" className={classes.subheading}>
-                Your password was accepted, but Backstage could not issue an
+                Your password was accepted, but the portal could not issue an
                 identity.
               </Typography>
               <div className={classes.alert} role="alert">
                 <ErrorOutlineIcon className={classes.alertIcon} />
                 <Typography variant="body2">
                   {proxyError?.message ??
-                    `The backend rejected the ${orgName} session.`}
+                    `The ${orgName} session was rejected.`}
                 </Typography>
               </div>
               <Typography variant="body2" color="textSecondary">
@@ -287,7 +289,7 @@ export function TeamomfSignInPage(props: SignInPageProps) {
           </ul>
         </div>
         <Typography variant="caption" className={classes.asideFooter}>
-          Powered by Backstage
+          TEAMOMF Platform Engineering
         </Typography>
       </aside>
 

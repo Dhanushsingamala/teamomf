@@ -1,4 +1,5 @@
 import { Typography, makeStyles } from '@material-ui/core';
+import { teamomf, radius } from '../theme/tokens';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -9,13 +10,14 @@ const useStyles = makeStyles(theme => ({
   monogram: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: radius.md,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    color: theme.palette.primary.contrastText,
-    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+    // Saffron tile on navy chrome: the TEAMOMF mark used across the app.
+    color: teamomf.navySurface,
+    backgroundColor: teamomf.saffron,
     fontWeight: 700,
     fontSize: '1rem',
     letterSpacing: '0.04em',

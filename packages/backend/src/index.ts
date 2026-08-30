@@ -33,6 +33,12 @@ backend.add(import('@backstage/plugin-auth-backend'));
 backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
 // See https://backstage.io/docs/auth/guest/provider
 
+// GitHub OAuth. This is NOT a sign-in method for TEAMOMF -- the sign-in page
+// only offers credential login. It exists so that scmAuthApi can obtain a
+// GitHub token on the user's behalf, which the GitHub Actions plugin needs to
+// read real workflow runs.
+backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
+
 // TEAMOMF credential-based login.
 //
 // Two separate features from one package:
