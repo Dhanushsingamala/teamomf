@@ -9,6 +9,7 @@
 import { createBackend } from '@backstage/backend-defaults';
 import {
   authModuleTeamomfCredentialsProvider,
+  permissionModuleTeamomfPolicy,
   teamomfCredentialsPlugin,
 } from '@internal/plugin-teamomf-credentials-backend';
 
@@ -59,10 +60,9 @@ backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
-// See https://backstage.io/docs/permissions/getting-started for how to create your own permission policy
-backend.add(
-  import('@backstage/plugin-permission-backend-module-allow-all-policy'),
-);
+// The TEAMOMF policy replaces the stock allow-all module. Authorization is
+// derived from real catalog Group membership carried on the identity token.
+backend.add(permissionModuleTeamomfPolicy);
 
 // search plugin
 backend.add(import('@backstage/plugin-search-backend'));

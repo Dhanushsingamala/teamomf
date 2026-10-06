@@ -1,0 +1,68 @@
+name: CI
+
+# NOTE: this file is copied verbatim by the TEAMOMF scaffolder, which renders
+# every skeleton file through Nunjucks. GitHub Actions expression syntax
+# collides with that renderer, so this workflow deliberately uses no
+# expressions at all.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Matches the "engines" field: the service relies on Node 22
+          # built-ins (node:test, global fetch).
+          node-version: '22'
+
+      - name: Install dependencies
+        # `npm install`, not `npm ci`: a freshly scaffolded repository has no
+        # package-lock.json until someone commits one.
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Smoke test the built service
+        # `npm test` mounts the Express app in-process. This additionally
+        # proves the real entry point boots and serves traffic.
+        run: |
+          npm start &
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:3000/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:3000/health | tee /dev/stderr | grep -q '"status":"healthy"'
+
+  docs:
+    name: Build TechDocs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install MkDocs
+        # Same package the TEAMOMF portal uses to generate TechDocs, pinned so
+        # a new release cannot turn a green build red.
+        run: pip install mkdocs-techdocs-core==1.7.1
+
+      - name: Build documentation
+        # --strict fails on broken internal links and missing nav entries.
+        run: mkdocs build --strict --site-dir ./site

@@ -1,0 +1,13 @@
+site_name: ${{ values.name }}
+site_description: ${{ values.description }}
+
+repo_url: https://github.com/${{ values.destination.owner }}/${{ values.destination.repo }}
+edit_uri: edit/main/docs/
+
+nav:
+  - Overview: index.md
+
+# techdocs-core supplies the theme and the markdown extension set Backstage
+# TechDocs expects, so no extra markdown_extensions are declared here.
+plugins:
+  - techdocs-core

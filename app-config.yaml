@@ -28,39 +28,44 @@ app:
               row: 2
               width: 4
               height: 5
-            - component: TeamomfMyWork
+            - component: TeamomfAccess
               column: 0
               row: 7
-              width: 6
-              height: 5
-            - component: HomePageStarredEntities
-              column: 6
+              width: 4
+              height: 6
+            - component: TeamomfMyWork
+              column: 4
               row: 7
-              width: 6
-              height: 5
+              width: 4
+              height: 6
+            - component: HomePageStarredEntities
+              column: 8
+              row: 7
+              width: 4
+              height: 6
             - component: TeamomfServices
               column: 0
-              row: 12
+              row: 13
               width: 4
               height: 5
             - component: TeamomfApis
               column: 4
-              row: 12
+              row: 13
               width: 4
               height: 5
             - component: TeamomfDocs
               column: 8
-              row: 12
+              row: 13
               width: 4
               height: 5
             - component: TeamomfTemplates
               column: 0
-              row: 17
+              row: 18
               width: 6
               height: 4
             - component: TeamomfRepositories
               column: 6
-              row: 17
+              row: 18
               width: 6
               height: 4
 
@@ -142,10 +147,6 @@ techdocs:
 auth:
   # see https://backstage.io/docs/auth/ to learn about auth providers
   providers:
-    # See https://backstage.io/docs/auth/guest/provider
-    # Retained as a fallback while credential login is being verified.
-    guest: {}
-
     # TEAMOMF credential login. The provider itself is registered in code by
     # @internal/plugin-teamomf-credentials-backend; the auth plugin only
     # instantiates providers that also appear here, so this key is required
@@ -186,7 +187,18 @@ catalog:
     # Domain/Group/User added so that the real TEAMOMF org chart can be
     # ingested from a GitHub location. Without these three, User and Group
     # entities from any url: location are silently discarded.
-    - allow: [Component, System, API, Resource, Location, Domain, Group, User]
+    - allow:
+        [
+          Component,
+          System,
+          API,
+          Resource,
+          Location,
+          Domain,
+          Group,
+          User,
+          Template,
+        ]
   locations:
     # NOTE: examples/entities.yaml (example-website, example-grpc-api, the
     # "examples" System) is deliberately NOT registered. Those are Backstage
@@ -209,17 +221,27 @@ catalog:
       rules:
         - allow: [System, Domain]
 
-    # Local example template
+    # Real TEAMOMF software templates. One location per template so a broken
+    # template cannot stop the others from being ingested.
     - type: file
-      target: ../../examples/template/template.yaml
+      target: ../../templates/node-service/template.yaml
       rules:
         - allow: [Template]
 
-    # Local example organizational data
     - type: file
-      target: ../../examples/org.yaml
+      target: ../../templates/api-service/template.yaml
       rules:
-        - allow: [User, Group]
+        - allow: [Template]
+
+    - type: file
+      target: ../../templates/techdocs/template.yaml
+      rules:
+        - allow: [Template]
+
+    # NOTE: examples/template/template.yaml (example-nodejs-template) and
+    # examples/org.yaml (User:guest, Group:guests) are deliberately NOT
+    # registered. They are Backstage demo entities; the templates above and
+    # catalog/teamomf-org.yaml replace them with real TEAMOMF data.
 
     ## Uncomment these lines to add more example data
     # - type: url
@@ -238,6 +260,67 @@ kubernetes:
 permission:
   # setting this to `false` will disable permissions
   enabled: true
+
+teamomf:
+  # The TEAMOMF persona model.
+  #
+  # A persona IS a catalog Group -- there is no separate role entity and no
+  # RBAC plugin. Membership comes from `spec.memberOf` on the User entity in
+  # catalog/teamomf-org.yaml, is turned into `ownershipEntityRefs` by the
+  # sign-in resolver, and is read here by TeamomfPermissionPolicy. A person
+  # cannot assert a persona from the browser; the only way to hold one is to
+  # genuinely be in that Group in the catalog.
+  #
+  # `capabilities` are named bundles of real Backstage permissions, defined in
+  # plugins/teamomf-credentials-backend/src/permissions/capabilities.ts:
+  #
+  #   template.read             open a template and see its parameters/steps
+  #   scaffolder.execute        create a service from a template
+  #   scaffolder.cancel         cancel a running scaffolder task
+  #   template.manage           administer templates
+  #   catalog.entity.refresh    force an entity to refresh from source
+  #   catalog.entity.write      create or delete catalog entities
+  #   catalog.location.manage   register or remove catalog locations
+  #   '*'                       every capability above
+  #
+  # Anything NOT listed above is ungated and allowed for every signed-in
+  # user: reading the catalog, APIs, TechDocs, search and settings. An
+  # unrecognised capability name fails backend startup rather than silently
+  # granting the wrong thing.
+  #
+  # A Group with no entry here (finance, hr) is read-only.
+  permissions:
+    personas:
+      - group: developers
+        title: Developer
+        # Unchanged from the pre-persona policy: Developers keep every
+        # capability they already had.
+        capabilities: ['*']
+
+      - group: tech-leads
+        title: Tech Lead
+        # A tech lead is a developer with organisational responsibility.
+        # Backstage publishes no permission that expresses "approve" or
+        # "own a team", so this is deliberately the same capability set as
+        # Developer rather than an invented distinction.
+        capabilities: ['*']
+
+      - group: engineering-managers
+        title: Engineering Manager
+        # Oversight, not self-service. Can browse the template catalogue and
+        # refresh entities to fix stale data, but cannot create repositories
+        # or mutate the catalog.
+        capabilities:
+          - template.read
+          - catalog.entity.refresh
+
+      - group: platform
+        title: Platform / DevOps
+        capabilities: ['*']
+
+      - group: platform-admins
+        title: Admin
+        capabilities: ['*']
 
 # see https://backstage.io/docs/ai/mcp-actions for more details
 mcpActions:

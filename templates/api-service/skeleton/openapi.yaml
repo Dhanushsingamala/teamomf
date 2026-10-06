@@ -1,0 +1,101 @@
+openapi: 3.0.3
+
+info:
+  title: ${{ values.name }}
+  description: ${{ values.description }}
+  version: 0.1.0
+
+# No endpoint on this service is authenticated yet. An empty root-level
+# security requirement states that explicitly rather than implying a scheme
+# that does not exist.
+security: []
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: ${{ values.resource }}
+    description: Manage ${{ values.resource }}
+  - name: System
+    description: Health and the API contract
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Liveness and readiness probe
+      operationId: getHealth
+      responses:
+        '200':
+          description: The service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+  /openapi.yaml:
+    get:
+      tags: [System]
+      summary: This OpenAPI document
+      operationId: getOpenApiSpec
+      responses:
+        '200':
+          description: The OpenAPI specification
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  /${{ values.resource }}:
+    get:
+      tags: [${{ values.resource }}]
+      summary: List ${{ values.resource }}
+      operationId: list${{ values.resource | capitalize }}
+      responses:
+        '200':
+          description: A page of ${{ values.resource }}
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [service, status, version, timestamp]
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+          enum: [healthy]
+        version:
+          type: string
+        uptimeSeconds:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string

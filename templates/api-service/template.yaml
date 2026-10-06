@@ -1,0 +1,126 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: teamomf-api-service
+  title: TEAMOMF REST API Service
+  description: >-
+    A REST API service following the conventions established by
+    teamomf-orders-service: Express 5, an OpenAPI 3.0 contract served at
+    /openapi.yaml, TechDocs, a GitHub Actions CI workflow, and both a
+    Component and an API entity wired to a real owner and system. Creates a
+    real GitHub repository.
+  tags:
+    - nodejs
+    - rest
+    - openapi
+    - techdocs
+    - recommended
+spec:
+  owner: group:default/developers
+  type: service
+
+  parameters:
+    - title: API identity
+      required: [name, description]
+      properties:
+        name:
+          title: Service name
+          type: string
+          description: >-
+            Catalog entity name. Lower case, dashes only, e.g.
+            teamomf-payments-service
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 63
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: One sentence on what this API is responsible for.
+          maxLength: 200
+        resource:
+          title: Primary resource (plural)
+          type: string
+          description: >-
+            The collection this API exposes, used for the generated route and
+            schema, e.g. payments
+          default: items
+          pattern: '^[a-z][a-z0-9]*$'
+
+    - title: Ownership
+      required: [owner, system, lifecycle]
+      properties:
+        owner:
+          title: Owner
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+        system:
+          title: System
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+            allowArbitraryValues: false
+        lifecycle:
+          title: Lifecycle
+          type: string
+          default: experimental
+          enum: [experimental, production, deprecated]
+          enumNames: [Experimental, Production, Deprecated]
+
+    - title: Repository
+      required: [repoUrl]
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts: [github.com]
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github: [repo, workflow]
+
+  steps:
+    - id: fetch
+      name: Generate API service from TEAMOMF skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          resource: ${{ parameters.resource }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          lifecycle: ${{ parameters.lifecycle }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Create GitHub repository
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+
+    - id: register
+      name: Register in the TEAMOMF catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in the TEAMOMF catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

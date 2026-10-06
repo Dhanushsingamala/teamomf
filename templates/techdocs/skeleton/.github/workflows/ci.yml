@@ -1,0 +1,38 @@
+name: CI
+
+# NOTE: this file is copied verbatim by the TEAMOMF scaffolder, which renders
+# every skeleton file through Nunjucks. GitHub Actions expression syntax
+# collides with that renderer, so this workflow deliberately uses no
+# expressions at all.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Build TechDocs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install MkDocs
+        # Same package the TEAMOMF portal uses to generate TechDocs, pinned so
+        # a new release cannot turn a green build red.
+        run: pip install mkdocs-techdocs-core==1.7.1
+
+      - name: Build documentation
+        # --strict fails on broken internal links and missing nav entries, so
+        # a documentation site cannot be merged in a state the portal would
+        # fail to render.
+        run: mkdocs build --strict --site-dir ./site

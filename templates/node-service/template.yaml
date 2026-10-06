@@ -1,0 +1,126 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: teamomf-node-service
+  title: TEAMOMF Node.js Service
+  description: >-
+    A Node.js 22 / Express 5 service following TEAMOMF conventions: layered
+    src/, health endpoint, node:test suite, TechDocs, a GitHub Actions CI
+    workflow, and a catalog-info.yaml wired to a real owner and system.
+    Creates a real GitHub repository.
+  tags:
+    - nodejs
+    - express
+    - service
+    - techdocs
+    - recommended
+spec:
+  # Owned by the Developers group, which is also the only group the permission
+  # policy allows to execute scaffolder tasks.
+  owner: group:default/developers
+  type: service
+
+  parameters:
+    - title: Service identity
+      required: [name, description]
+      properties:
+        name:
+          title: Service name
+          type: string
+          description: >-
+            Catalog entity name. Lower case, dashes only, e.g.
+            teamomf-billing-service
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 63
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: One sentence on what this service is responsible for.
+          maxLength: 200
+
+    - title: Ownership
+      required: [owner, system, lifecycle]
+      properties:
+        owner:
+          title: Owner
+          type: string
+          description: The TEAMOMF group that owns this service.
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+        system:
+          title: System
+          type: string
+          description: The system this service belongs to.
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+            allowArbitraryValues: false
+        lifecycle:
+          title: Lifecycle
+          type: string
+          default: experimental
+          enum: [experimental, production, deprecated]
+          enumNames:
+            - Experimental
+            - Production
+            - Deprecated
+
+    - title: Repository
+      required: [repoUrl]
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts: [github.com]
+            # Publishes using the signed-in user's own GitHub OAuth token
+            # rather than a shared PAT, so the repository and its first commit
+            # are attributed to the real person who ran the template.
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github: [repo, workflow]
+
+  steps:
+    - id: fetch
+      name: Generate service from TEAMOMF skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          lifecycle: ${{ parameters.lifecycle }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Create GitHub repository
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+
+    - id: register
+      name: Register in the TEAMOMF catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in the TEAMOMF catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

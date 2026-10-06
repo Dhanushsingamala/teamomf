@@ -1,0 +1,42 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  title: ${{ values.name }}
+  description: ${{ values.description }}
+  annotations:
+    github.com/project-slug: ${{ (values.destination.owner + "/" + values.destination.repo) | replace(" ", "-") }}
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - nodejs
+    - express
+    - rest
+spec:
+  type: service
+  lifecycle: ${{ values.lifecycle }}
+  owner: ${{ values.owner }}
+  system: ${{ values.system }}
+  providesApis:
+    - ${{ values.name }}-api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ${{ values.name }}-api
+  title: ${{ values.name }} API
+  description: ${{ values.description }}
+  annotations:
+    github.com/project-slug: ${{ (values.destination.owner + "/" + values.destination.repo) | replace(" ", "-") }}
+  tags:
+    - rest
+    - openapi
+spec:
+  type: openapi
+  lifecycle: ${{ values.lifecycle }}
+  owner: ${{ values.owner }}
+  system: ${{ values.system }}
+  # Pulled from the real openapi.yaml in this repository rather than
+  # duplicated here, so the catalog can never drift from the shipped contract.
+  definition:
+    $text: ./openapi.yaml

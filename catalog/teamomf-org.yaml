@@ -1,16 +1,100 @@
 # TEAMOMF organisation.
 #
+# Groups are the unit of authorization AND the unit of persona: the
+# permission policy reads a user's group membership from their identity
+# token and grants capabilities from it. Which group grants what is
+# configured under `teamomf.permissions.personas` in app-config.yaml --
+# there is no separate role entity and no RBAC plugin.
+#
+# The five TEAMOMF personas are: developers, tech-leads,
+# engineering-managers, platform and platform-admins. A group with no
+# persona entry (finance, hr) is read-only.
+#
 # Managed by `yarn teamomf:user`. Every entry corresponds to a real
-# person with a real credential in the TEAMOMF credential store.
+# person with a real credential in the TEAMOMF credential store --
+# no placeholder or sample people are ever added here.
 apiVersion: backstage.io/v1alpha1
 kind: Group
 metadata:
   name: developers
-  title: developers
+  title: Developers
+  description: "Engineers who build and operate TEAMOMF services. Persona: Developer. Full self-service -- may create services from software templates and register catalog locations."
 spec:
   type: team
   profile:
-    displayName: developers
+    displayName: Developers
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: engineering-managers
+  title: Engineering Managers
+  description: "Managers accountable for delivery across teams. Persona: Engineering Manager. Oversight rather than self-service -- may browse software templates and refresh catalog entities, but may not create repositories or mutate the catalog."
+spec:
+  type: team
+  profile:
+    displayName: Engineering Managers
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: finance
+  title: Finance
+  description: Finance team. Has read access to the software catalog, APIs and documentation, but no scaffolding or catalog-write capabilities.
+spec:
+  type: team
+  profile:
+    displayName: Finance
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: hr
+  title: People & HR
+  description: People and HR team. Has read access to the organisation chart and the software catalog, but no scaffolding or catalog-write capabilities.
+spec:
+  type: team
+  profile:
+    displayName: People & HR
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+  title: Platform Engineering
+  description: "The team that builds and runs the TEAMOMF developer platform itself. Persona: Platform / DevOps. Full capabilities, including registering and removing catalog locations."
+spec:
+  type: team
+  profile:
+    displayName: Platform Engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform-admins
+  title: Platform Administrators
+  description: "Administrators of the TEAMOMF portal. Persona: Admin. Full capabilities. Membership should stay small."
+spec:
+  type: team
+  profile:
+    displayName: Platform Administrators
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: tech-leads
+  title: Tech Leads
+  description: "Senior engineers who lead a service or a team. Persona: Tech Lead. Same capabilities as Developer -- Backstage publishes no permission that expresses approval or team ownership, so no artificial distinction is made here."
+spec:
+  type: team
+  profile:
+    displayName: Tech Leads
   children: []
 ---
 apiVersion: backstage.io/v1alpha1
@@ -25,3 +109,14 @@ spec:
     email: dhanush@gmail.com
   memberOf:
     - developers
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: saicharan
+spec:
+  profile:
+    displayName: sai charan
+    email: charan@gmail.com
+  memberOf:
+    - engineering-managers

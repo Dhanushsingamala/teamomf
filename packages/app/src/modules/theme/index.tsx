@@ -1,5 +1,11 @@
-import { createFrontendModule } from '@backstage/frontend-plugin-api';
-import { ThemeBlueprint } from '@backstage/plugin-app-react';
+import {
+  PageLayout,
+  createFrontendModule,
+} from '@backstage/frontend-plugin-api';
+import {
+  SwappableComponentBlueprint,
+  ThemeBlueprint,
+} from '@backstage/plugin-app-react';
 import { UnifiedThemeProvider } from '@backstage/theme';
 import LightIcon from '@material-ui/icons/WbSunny';
 import DarkIcon from '@material-ui/icons/Brightness2';
@@ -48,9 +54,25 @@ const darkTheme = ThemeBlueprint.make({
   },
 });
 
+/**
+ * Replaces the core page layout -- the header and content chrome to the right
+ * of the sidebar. Backstage's default implementation is inline-styled with
+ * hardcoded colours and is not reachable from the theme; see
+ * ./TeamomfPageLayout for the details.
+ */
+const pageLayout = SwappableComponentBlueprint.make({
+  name: 'page-layout',
+  params: defineParams =>
+    defineParams({
+      component: PageLayout,
+      loader: async () =>
+        (await import('./TeamomfPageLayout')).TeamomfPageLayout,
+    }),
+});
+
 export const themeModule = createFrontendModule({
   pluginId: 'app',
-  extensions: [lightTheme, darkTheme],
+  extensions: [lightTheme, darkTheme, pageLayout],
 });
 
 export { teamomfLightTheme, teamomfDarkTheme };

@@ -1,0 +1,15 @@
+site_name: ${{ values.title }}
+site_description: ${{ values.description }}
+
+repo_url: https://github.com/${{ values.destination.owner }}/${{ values.destination.repo }}
+edit_uri: edit/main/docs/
+
+nav:
+  - Overview: index.md
+  - Decisions:
+      - 'ADR 001: Record architecture decisions': adr/001-record-architecture-decisions.md
+
+# techdocs-core supplies the theme and the markdown extension set Backstage
+# TechDocs expects.
+plugins:
+  - techdocs-core

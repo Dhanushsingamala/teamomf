@@ -1,8 +1,11 @@
 import { createFrontendModule } from '@backstage/frontend-plugin-api';
-import { HomePageWidgetBlueprint } from '@backstage/plugin-home-react/alpha';
+import {
+  HomePageLayoutBlueprint,
+  HomePageWidgetBlueprint,
+} from '@backstage/plugin-home-react/alpha';
 
 /**
- * TEAMOMF home page widgets.
+ * TEAMOMF home page: its layout and its widgets.
  *
  * Each widget renders live data from the catalog or the signed-in user's
  * identity. None of them contain sample entities, placeholder metrics or
@@ -10,8 +13,20 @@ import { HomePageWidgetBlueprint } from '@backstage/plugin-home-react/alpha';
  * and explains what would make real data appear.
  *
  * Placement is controlled by `app.extensions -> page:home -> defaultConfig`
- * in app-config.yaml; the `name` param below is the key used there.
+ * in app-config.yaml; the `name` param below is the key used there. The layout
+ * extension below decides how that configuration is turned into a grid.
  */
+
+/**
+ * Replaces the stock widget grid so that the layout configured in
+ * app-config.yaml is honoured at every window width, and so the page carries
+ * TEAMOMF chrome of its own. See ./HomeLayout.
+ */
+const layout = HomePageLayoutBlueprint.make({
+  params: {
+    loader: async () => (await import('./HomeLayout')).HomeLayout,
+  },
+});
 
 const welcome = HomePageWidgetBlueprint.make({
   name: 'teamomf-welcome',
@@ -36,6 +51,21 @@ const quickActions = HomePageWidgetBlueprint.make({
     layout: { width: { defaultColumns: 4 }, height: { defaultRows: 5 } },
     components: async () => ({
       Content: (await import('./widgets/QuickActions')).QuickActions,
+    }),
+  },
+});
+
+const access = HomePageWidgetBlueprint.make({
+  name: 'teamomf-access',
+  params: {
+    name: 'TeamomfAccess',
+    title: 'Your role & access',
+    description:
+      "The signed-in user's persona (catalog Group membership) and the live " +
+      'permission decisions that follow from it.',
+    layout: { width: { defaultColumns: 4 }, height: { defaultRows: 6 } },
+    components: async () => ({
+      Content: (await import('./widgets/Access')).Access,
     }),
   },
 });
@@ -122,8 +152,10 @@ const repositories = HomePageWidgetBlueprint.make({
 export const homeModule = createFrontendModule({
   pluginId: 'home',
   extensions: [
+    layout,
     welcome,
     quickActions,
+    access,
     ownedEntities,
     services,
     apis,

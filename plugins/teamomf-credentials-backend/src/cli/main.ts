@@ -1,11 +1,14 @@
 import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, join, resolve } from 'path';
 import knexFactory from 'knex';
+import { ConfigReader } from '@backstage/config';
 import { parse as parseYaml } from 'yaml';
 import { hashPassword } from '../auth/password';
 import { CredentialsStore } from '../database/CredentialsStore';
 import { ask, askHidden } from './prompt';
 import { removeOrgUser, slugify, upsertOrgEntities } from './orgCatalog';
+import { checkPersona } from './checkPersona';
+import { readPersonaModel } from '../permissions/personas';
 
 const PLUGIN_ID = 'teamomf-credentials';
 const ORG_CATALOG_RELATIVE = 'catalog/teamomf-org.yaml';
@@ -44,6 +47,33 @@ function resolveDatabaseFile(repoRoot: string): string {
     ? directory
     : resolve(backendCwd, directory);
   return join(dbDir, `${PLUGIN_ID}.sqlite`);
+}
+
+/**
+ * Reads `backend.baseUrl`, letting app-config.local.yaml win as Backstage does.
+ */
+function resolveBackendBaseUrl(repoRoot: string): string {
+  let baseUrl: string | undefined;
+  for (const name of ['app-config.yaml', 'app-config.local.yaml']) {
+    const file = join(repoRoot, name);
+    if (!existsSync(file)) {
+      continue;
+    }
+    const parsed = parseYaml(readFileSync(file, 'utf8'));
+    baseUrl = parsed?.backend?.baseUrl ?? baseUrl;
+  }
+  return (baseUrl ?? 'http://localhost:7007').replace(/\/$/, '');
+}
+
+/**
+ * Loads the persona model straight from app-config.yaml, using the same reader
+ * the backend uses, so `check` reports against the configuration on disk
+ * rather than a second copy of the rules.
+ */
+function resolvePersonaModel(repoRoot: string) {
+  const configPath = join(repoRoot, 'app-config.yaml');
+  const parsed = parseYaml(readFileSync(configPath, 'utf8')) ?? {};
+  return readPersonaModel(new ConfigReader(parsed));
 }
 
 async function openStore(repoRoot: string) {
@@ -199,9 +229,17 @@ export async function main(argv: string[]): Promise<void> {
     case 'remove':
       await commandRemove(repoRoot, rest[0]);
       break;
+    case 'check':
+      // Backend base URL is read from app-config so this follows any port change.
+      await checkPersona({
+        backendBaseUrl: resolveBackendBaseUrl(repoRoot),
+        personaModel: resolvePersonaModel(repoRoot),
+      });
+      break;
     default:
       fail(
-        `Unknown command "${command}". Usage: yarn teamomf:user [add|list|remove <username>]`,
+        `Unknown command "${command}". ` +
+          'Usage: yarn teamomf:user [add|list|remove <username>|check]',
       );
   }
 }

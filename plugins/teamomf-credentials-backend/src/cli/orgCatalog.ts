@@ -31,11 +31,25 @@ function readEntities(path: string): Entity[] {
 
 function writeEntities(path: string, entities: Entity[]): void {
   mkdirSync(dirname(path), { recursive: true });
+  // Rewritten on every save, so it has to carry the same explanation the
+  // hand-written file did -- otherwise running `yarn teamomf:user add` would
+  // silently strip the documentation of the persona model.
   const header = [
     '# TEAMOMF organisation.',
     '#',
+    '# Groups are the unit of authorization AND the unit of persona: the',
+    '# permission policy reads a user\'s group membership from their identity',
+    '# token and grants capabilities from it. Which group grants what is',
+    '# configured under `teamomf.permissions.personas` in app-config.yaml --',
+    '# there is no separate role entity and no RBAC plugin.',
+    '#',
+    '# The five TEAMOMF personas are: developers, tech-leads,',
+    '# engineering-managers, platform and platform-admins. A group with no',
+    '# persona entry (finance, hr) is read-only.',
+    '#',
     '# Managed by `yarn teamomf:user`. Every entry corresponds to a real',
-    '# person with a real credential in the TEAMOMF credential store.',
+    '# person with a real credential in the TEAMOMF credential store --',
+    '# no placeholder or sample people are ever added here.',
     '',
   ].join('\n');
   const body = entities.map(e => stringify(e, { lineWidth: 0 })).join('---\n');

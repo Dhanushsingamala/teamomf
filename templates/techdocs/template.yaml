@@ -1,0 +1,112 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: teamomf-techdocs
+  title: TEAMOMF Documentation Site
+  description: >-
+    A TechDocs-enabled repository with the mkdocs.yml and docs/ structure
+    TEAMOMF uses, including an ADR directory, plus a GitHub Actions workflow
+    that builds the site with --strict. For documentation that is not tied to
+    a single service, such as platform guides or standards. Creates a real
+    GitHub repository.
+  tags:
+    - techdocs
+    - documentation
+spec:
+  owner: group:default/developers
+  type: documentation
+
+  parameters:
+    - title: Documentation site
+      required: [name, description]
+      properties:
+        name:
+          title: Name
+          type: string
+          description: >-
+            Catalog entity name. Lower case, dashes only, e.g.
+            teamomf-platform-handbook
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 63
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: One sentence on what this documentation covers.
+          maxLength: 200
+        title:
+          title: Display title
+          type: string
+          description: Human readable title shown in TechDocs, e.g. Platform Handbook
+
+    - title: Ownership
+      required: [owner, system]
+      properties:
+        owner:
+          title: Owner
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+        system:
+          title: System
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+            allowArbitraryValues: false
+
+    - title: Repository
+      required: [repoUrl]
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts: [github.com]
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github: [repo, workflow]
+
+  steps:
+    - id: fetch
+      name: Generate documentation site
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          title: ${{ parameters.title }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Create GitHub repository
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+
+    - id: register
+      name: Register in the TEAMOMF catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in the TEAMOMF catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
